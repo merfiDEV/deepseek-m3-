@@ -46,6 +46,16 @@ const STRING_REPLACEMENTS = [
     name: "email_phone_placeholder",
     value: "Введи свой эмэйл / или номер 380\u2764\ufe0f",
   },
+  {
+    fileHint: path.join("res", "values-ru", "strings.xml"),
+    name: "profile_contact",
+    value: "Разработчик мода",
+  },
+  {
+    fileHint: path.join("res", "values-ru", "strings.xml"),
+    name: "intercom_entry",
+    value: "Разработчик мода",
+  },
 ];
 
 function applyStringPatch(decodedDir) {

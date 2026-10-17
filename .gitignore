@@ -17,3 +17,6 @@ Thumbs.db
 
 # temp
 *.tmp
+
+patch/*.log
+patch/*.log.err

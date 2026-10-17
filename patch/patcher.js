@@ -187,10 +187,27 @@ function buildSplit(a) {
   console.log("DONE:", a["apk-out"]);
 }
 
+function repack(a) {
+  for (const k of ["apk-out", "decoded"]) {
+    if (!a[k]) { console.error("missing --" + k); process.exit(2); }
+  }
+  console.log("== repack: rebuild (no decode) ==");
+  const unsigned = path.join(path.dirname(a["apk-out"]), "repack-unsigned.apk");
+  run(CONFIG.java, ["-jar", CONFIG.apktool, "b", a.decoded, "-o", unsigned]);
+  console.log("== repack: sign ==");
+  ensureKeystore();
+  sign(unsigned, a["apk-out"]);
+  console.log("DONE:", a["apk-out"]);
+}
+
 function main() {
   const a = parseArgs(process.argv);
   if (a.cmd === "split") {
     buildSplit(a);
+    return;
+  }
+  if (a.cmd === "repack") {
+    repack(a);
     return;
   }
   if (a.cmd !== "build") {

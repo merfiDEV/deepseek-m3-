@@ -2,6 +2,7 @@ package com.deepseek.chat.patch;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 
@@ -10,12 +11,18 @@ import android.net.Uri;
  * до любой Activity. Здесь инициализируем патч и показываем уведомление.
  */
 public class PatchInit extends ContentProvider {
+    private static Context sContext;
+
+    public static Context appContext() {
+        return sContext;
+    }
+
     @Override
     public boolean onCreate() {
         try {
-            PatchNotifier.show(getContext());
+            sContext = getContext();
+            PatchNotifier.show(sContext);
         } catch (Throwable t) {
-            // не должны ронять приложение
         }
         return true;
     }
