@@ -38,6 +38,34 @@ function neutralizeMethodBody(text, methodSig) {
   return { text: newText, changed: true, reason: "patched: " + methodSig };
 }
 
+// Замена строковых ресурсов в values-ru (идемпотентно).
+// Правило привязано к имени string, а не к значению — переживает смену текста в новых версиях.
+const STRING_REPLACEMENTS = [
+  {
+    fileHint: path.join("res", "values-ru", "strings.xml"),
+    name: "email_phone_placeholder",
+    value: "Введи свой эмэйл / или номер 380\u2764\ufe0f",
+  },
+];
+
+function applyStringPatch(decodedDir) {
+  const results = [];
+  for (const rule of STRING_REPLACEMENTS) {
+    const file = path.join(decodedDir, rule.fileHint);
+    if (!fs.existsSync(file)) { results.push("string: file not found " + rule.fileHint); continue; }
+    let text = fs.readFileSync(file, "utf8");
+    const re = new RegExp('(<string name="' + rule.name + '">)([\\s\\S]*?)(</string>)');
+    if (!re.test(text)) { results.push("string: not found " + rule.name); continue; }
+    if (text.includes('name="' + rule.name + '">' + rule.value + "<")) {
+      results.push("string: already patched " + rule.name); continue;
+    }
+    text = text.replace(re, "$1" + rule.value + "$3");
+    fs.writeFileSync(file, text, "utf8");
+    results.push("string: patched " + rule.name);
+  }
+  return results;
+}
+
 function applySmaliPatch(decodedDir) {
   const results = [];
   for (const target of TARGETS) {
@@ -62,4 +90,4 @@ function applySmaliPatch(decodedDir) {
   return results;
 }
 
-module.exports = { applySmaliPatch, MARKER };
+module.exports = { applySmaliPatch, applyStringPatch, MARKER };

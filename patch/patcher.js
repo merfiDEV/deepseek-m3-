@@ -17,7 +17,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
-const { applySmaliPatch } = require("./smali_patch.js");
+const { applySmaliPatch, applyStringPatch } = require("./smali_patch.js");
 
 const CONFIG = {
   javac: String.raw`C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot\bin\javac.exe`,
@@ -167,10 +167,35 @@ function parseArgs(argv) {
   return a;
 }
 
+function buildSplit(a) {
+  for (const k of ["apk-in", "apk-out", "workdir"]) {
+    if (!a[k]) { console.error("missing --" + k); process.exit(2); }
+  }
+  fs.mkdirSync(a.workdir, { recursive: true });
+  const decoded = path.join(a.workdir, "decoded");
+  console.log("== split: decode ==");
+  decode(a["apk-in"], decoded);
+  console.log("== split: string patch ==");
+  const stringResults = applyStringPatch(decoded);
+  for (const s of stringResults) console.log(s);
+  console.log("== split: rebuild ==");
+  const unsigned = path.join(a.workdir, "split-unsigned.apk");
+  run(CONFIG.java, ["-jar", CONFIG.apktool, "b", decoded, "-o", unsigned]);
+  console.log("== split: sign ==");
+  ensureKeystore();
+  sign(unsigned, a["apk-out"]);
+  console.log("DONE:", a["apk-out"]);
+}
+
 function main() {
   const a = parseArgs(process.argv);
+  if (a.cmd === "split") {
+    buildSplit(a);
+    return;
+  }
   if (a.cmd !== "build") {
-    console.error("usage: node patch/patcher.js build --apk-in ... --apk-out ... --workdir ... --src ...");
+    console.error("usage: node patch/patcher.js build  --apk-in ... --apk-out ... --workdir ... --src ...");
+    console.error("       node patch/patcher.js split  --apk-in ... --apk-out ... --workdir ...");
     process.exit(2);
   }
   for (const k of ["apk-in", "apk-out", "workdir", "src"]) {
@@ -184,6 +209,8 @@ function main() {
   console.log("== 1b. smali patch (PairIP) ==");
   const smaliResults = applySmaliPatch(decoded);
   for (const s of smaliResults) console.log(s);
+  const stringResults = applyStringPatch(decoded);
+  for (const s of stringResults) console.log(s);
   console.log("== 2. compile java ==");
   const classesDir = compileJava(a.src, a.workdir);
   console.log("== 3. d8 ==");
