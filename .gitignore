@@ -1,0 +1,19 @@
+# build artifacts
+patch/work/
+patch/work2/
+patch/work*/
+patch/build*.log
+patch/build*.log.err
+*.apk
+decoded/
+decoded_ru/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# temp
+*.tmp
